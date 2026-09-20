@@ -1,6 +1,7 @@
 let observer = null;
 let activeTeams = [];
 let ufc = false;
+let mTabs = [];
 
 // ================== FIND MONEYLINE ==================
 function findMoneyline(team, type="Moneyline") {
@@ -63,10 +64,40 @@ function findSpread(team, spread) {
         .filter(div => {
             const label = div.getAttribute("aria-label") || "";
             if (label.includes(team) && !label.includes("Total")) {
-                console.log(label);
             }
-            if (positive) return label.includes(team) && !label.includes("Total") && (label.split(", ")[2] ? !label.split(", ")[2].startsWith("-") : true);
+            if (positive) {
+                if (label.split(", ")[0].includes("Puck Line")) {
+                    if (label.split(", ")[0] === "Puck Line") {
+                        return label.includes(team) && !label.includes("Total") && (label.split(", ")[2] ? !label.split(", ")[2].startsWith("-") : true);
+                    }
+                    return label.includes(team) && !label.includes("Total") && (label.split(", ")[1] ? !label.split(", ")[1].split(" ")[label.split(", ")[1].split(" ").length - 1].startsWith("-") : true);    
+                }
+                return label.includes(team) && !label.includes("Total") && (label.split(", ")[0] ? !label.split(", ")[0].split(" ")[label.split(", ")[0].split(" ").length - 1].startsWith("-") : true);
+            }
             return label.includes(team) && !label.includes("Total");
+        });
+}
+
+function findRFI(type) {
+    if (type === "YRFI") {
+        type = "Over";
+    }
+    if (type === "NRFI") {
+        type = "Under";
+    }
+
+    return [...document.querySelectorAll(`div[aria-label*="1st Inning 0.5 Runs, "]`)]
+        .filter(div => {
+            const label = div.getAttribute("aria-label") || "";
+            return label.split(", ")[1].includes(type);
+        });
+}
+
+function findToAdvance(team) {
+    return [...document.querySelectorAll(`div[aria-label*="To Qualify for the Next Round"]`)]
+        .filter(div => {
+            const label = div.getAttribute("aria-label") || "";
+            return label.split(", ")[1] === team;
         });
 }
 
@@ -79,18 +110,8 @@ function extractText() {
     for (let i = 0; i < activeTeams.length; i++) {
         const team = activeTeams[i];
 
-        if (Array.isArray(team)) {
-            if (i === 2 || i === 3) {
-                result.push(findTotal(team[0], team[1]));
-            } else if (i === 4 || i === 5) {
-                const divs = findSpread(team[0], team[1]);
-                const fdDiv = divs[0];
-                const fdText =
-                    fdDiv?.children[1]?.textContent?.trim() || "";
-                
-                result.push(fdText);
-            }
-        } else {
+        const mTab = mTabs[Math.trunc(i / 2)] || "Game Winner";
+        if (mTab === "Game Winner") {
             let divs;
             if (ufc) {
                 divs = findMoneyline(team, "to win");
@@ -101,18 +122,54 @@ function extractText() {
             const fdDiv = divs[0];
             const fdText =
                 fdDiv?.querySelector("span")?.textContent?.trim() || "";
+            
+            if (!fdText) {
+                const divs2 = findToAdvance(team);
+                const fdDiv2 = divs2[0];
+                const fdText2 = fdDiv2?.querySelector("span")?.textContent?.trim() || "";
+                result.push(fdText2 || "");
+            } else {
+                result.push(fdText || "");
+            }
+        } else if (mTab === "Total" || "") {
+            result.push(findTotal(team[0], team[1]) || "");
+        } else if (mTab === "Spread") {
+            const divs = findSpread(team[0], team[1]);
 
-            result.push(fdText);
+            if (!divs) {
+                result.push("");
+                continue;
+            }
+
+            const fdDiv = divs[0];
+
+            if (!fdDiv) {
+                result.push("");
+                continue;
+            }
+
+            if (fdDiv.children[1]) {
+                const fdText =
+                    fdDiv?.children[1]?.textContent?.trim() || "";
+                result.push(fdText || "");
+            } else {
+                const fdText = fdDiv.firstChild.textContent?.trim() || "";
+                result.push(fdText || "");
+            }
+        } else if (mTab === "Run in 1st inning?") {
+            const divs = findRFI(team[0]);
+            const fdDiv = divs[0];
+            const fdText = fdDiv?.querySelector("span")?.textContent?.trim() || "";
+            result.push(fdText || "");
+        } else if (mTab === "To Advance") {
+            const divs = findToAdvance(team);
+            const fdDiv = divs[0];
+            const fdText = fdDiv?.querySelector("span")?.textContent?.trim() || "";
+            result.push(fdText || "");
         }
     }
 
-    if (result.length > 4) {
-        return [result[0] || "", result[1] || "", result[2] || "", result[3] || "", result[4] || "", result[5] || ""];
-    }
-    if (result.length > 2) {
-        return [result[0] || "", result[1] || "", result[2] || "", result[3] || ""];
-    }
-    return [result[0] || "", result[1] || ""];
+    return result;
 }
 
 // ================== OBSERVER ==================
@@ -149,6 +206,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "SET_ACTIVE_TEAMS") {
         activeTeams = request.teams || [];
         ufc = request.ufc || false;
+        mTabs = request.mTabs || [];
     }
 
     if (request.type === "START_OBSERVING_FD") {
@@ -158,6 +216,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "GET_FD_TEXT") {
         sendResponse({ text: extractText() });
     }
+
+    if (request.type === "GET_FD_ML") {
+        const team = request.teamName?.trim();
+        if (!team) {
+            sendResponse({ text: "" });
+            return;
+        }
+
+        const mappedTeams = Array.isArray(request.teamNames) && request.teamNames.length
+            ? request.teamNames
+            : [team];
+        for (const fullname of mappedTeams) {
+            const odds = findMoneyline(fullname);
+            const fdText = odds[0]?.querySelector("span")?.textContent?.trim() || "";
+            console.log(fdText, fullname);
+            if (fdText) {
+                sendResponse({ text: fdText });
+                return;
+            }
+        }
+
+        sendResponse({ text: "" });
+    } 
 
     return true;
 });
