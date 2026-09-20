@@ -1,6 +1,7 @@
 // ================== DOM REFERENCES ==================
 const tabs = document.querySelectorAll(".tab");
 const modes = document.querySelectorAll(".mode");
+const calculators = document.querySelectorAll(".view3");
 
 const output1 = document.getElementById("output1");
 const odds1   = document.getElementById("odds1");
@@ -46,6 +47,8 @@ const stake6 = document.getElementById("stake6");
 
 const secondTable = document.getElementById("second-table");
 const thirdTable = document.getElementById("third-table");
+const secondTableHeader = document.getElementById("second-table-header");
+const thirdTableHeader = document.getElementById("third-table-header");
 
 const pollcard = document.getElementById("poll-card");
 
@@ -70,6 +73,61 @@ const twoway_name2_zero_ev = document.getElementById("two-way-name2-zero-ev");
 const twoway_name2_max_ev = document.getElementById("two-way-name2-max-ev");
 const twoway_name2_fair = document.getElementById("two-way-name2-fair");
 
+const threeway_payout = document.getElementById("three-way-payout");
+const threewayInputs = document.querySelectorAll(".three-way-input");
+const threeway_name1 = document.getElementById("three-way-name1");
+const threeway_realodds1 = document.getElementById("three-way-realodds1");
+const threeway_sportsbookodds1 = document.getElementById("three-way-sportsbookodds1");
+const threeway_name2 = document.getElementById("three-way-name2");
+const threeway_realodds2 = document.getElementById("three-way-realodds2");
+const threeway_sportsbookodds2 = document.getElementById("three-way-sportsbookodds2");
+const threeway_name3 = document.getElementById("three-way-name3");
+const threeway_realodds3 = document.getElementById("three-way-realodds3");
+const threeway_sportsbookodds3 = document.getElementById("three-way-sportsbookodds3");
+const threeway_warning = document.getElementById("three-way-warning");
+const threeway_result_header = document.getElementById("three-way-result-header");
+const threeway_result = document.getElementById("three-way-result");
+const threeway_maxbet_header = document.getElementById("three-way-maxbet-header");
+const threeway_result_name1 = document.getElementById("three-way-result-name1");
+const threeway_name1_zero_ev = document.getElementById("three-way-name1-zero-ev");
+const threeway_name1_max_ev = document.getElementById("three-way-name1-max-ev");
+const threeway_name1_fair = document.getElementById("three-way-name1-fair");
+const threeway_result_name2 = document.getElementById("three-way-result-name2");
+const threeway_name2_zero_ev = document.getElementById("three-way-name2-zero-ev");
+const threeway_name2_max_ev = document.getElementById("three-way-name2-max-ev");
+const threeway_name2_fair = document.getElementById("three-way-name2-fair");
+const threeway_result_name3 = document.getElementById("three-way-result-name3");
+const threeway_name3_zero_ev = document.getElementById("three-way-name3-zero-ev");
+const threeway_name3_max_ev = document.getElementById("three-way-name3-max-ev");
+const threeway_name3_fair = document.getElementById("three-way-name3-fair");
+
+const more_calculator = document.getElementById("more-calculator");
+const moreCalculatorInputs = document.querySelectorAll(".more-calculator-input");
+
+const dotd_calculate_btn = document.getElementById("dotd-calculate-btn");
+const dotd_warning = document.getElementById("dotd-warning");
+const dotd_table_body = document.getElementById("dotd-table-body");
+
+function renderDotdTable(rows) {
+    dotd_table_body.innerHTML = "";
+
+    rows.forEach((values) => {
+        const row = document.createElement("tr");
+        values.forEach((value) => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+        dotd_table_body.appendChild(row);
+    });
+}
+
+chrome.storage.local.get("dotdTableRows", ({ dotdTableRows }) => {
+    if (Array.isArray(dotdTableRows)) {
+        renderDotdTable(dotdTableRows);
+    }
+});
+
 const pregame = document.getElementById("pregame");
 const bankrollInput = document.getElementById("bankroll");
 const switchWrapper = document.querySelector(".switch-wrapper");
@@ -84,6 +142,7 @@ let realTeamNames = ["", ""];
 let lastValidTeams = ["", ""];
 let realPollState = [];
 let ufc = false
+let mTabs = [];
 let manualMode = false;
 let realReady = false;
 let fdReady = false;
@@ -96,6 +155,12 @@ chrome.storage.local.get("lastView", ({ lastView }) => {
 
 chrome.storage.local.get("lastMode", ({ lastMode }) => {
     switchMode(lastMode || "two-way", false);
+});
+
+chrome.storage.local.get("lastCalculator", ({ lastCalculator }) => {
+    switchCalculator(lastCalculator || "psp", false);
+    more_calculator.value = lastCalculator || "psp";
+    updatePopup();
 });
 
 chrome.storage.local.get(["bankroll"], (res) => {
@@ -111,6 +176,22 @@ chrome.storage.local.get(["two-way"], (res) => {
         twoway_name2.querySelector("input").value = res["two-way"][4] || "";
         twoway_realodds2.querySelector("input").value = res["two-way"][5] || "";
         twoway_sportsbookodds2.querySelector("input").value = res["two-way"][6] || "";
+        updatePopup();
+    }
+});
+
+chrome.storage.local.get(["three-way"], (res) => {
+    if (res["three-way"] && Array.isArray(res["three-way"])) {
+        threeway_payout.value = res["three-way"][0] || "50 (10 payout)";
+        threeway_name1.querySelector("input").value = res["three-way"][1] || "";
+        threeway_realodds1.querySelector("input").value = res["three-way"][2] || "";
+        threeway_sportsbookodds1.querySelector("input").value = res["three-way"][3] || "";
+        threeway_name2.querySelector("input").value = res["three-way"][4] || "";
+        threeway_realodds2.querySelector("input").value = res["three-way"][5] || "";
+        threeway_sportsbookodds2.querySelector("input").value = res["three-way"][6] || "";
+        threeway_name3.querySelector("input").value = res["three-way"][7] || "";
+        threeway_realodds3.querySelector("input").value = res["three-way"][8] || "";
+        threeway_sportsbookodds3.querySelector("input").value = res["three-way"][9] || "";
         updatePopup();
     }
 });
@@ -138,66 +219,149 @@ pollcard.addEventListener("click", (e) => {
     const i = parseInt(pollEl.id);
     const data = realPollState[i];
 
-    chrome.storage.local.get(["two-way"], (res) => {
+    if (data[1].length === 2) {
+        chrome.storage.local.get(["two-way"], (res) => {
 
-        let payout = "";
-        let fdOdd1 = "";
-        let fdOdd2 = "";
+            let payout = "";
+            let fdOdd1 = "";
+            let fdOdd2 = "";
 
-        if (res["two-way"] && Array.isArray(res["two-way"])) {
-            payout = res["two-way"][0];
-            fdOdd1 = res["two-way"][3];
-            fdOdd2 = res["two-way"][6];
-        }
+            if (res["two-way"] && Array.isArray(res["two-way"])) {
+                payout = res["two-way"][0];
+                fdOdd1 = res["two-way"][3];
+                fdOdd2 = res["two-way"][6];
+            }
 
-        const values = [];
+            const values = [];
 
-        values.push(payout ? payout : "50 (10 payout)");
+            values.push(payout ? payout : "50 (10 payout)");
 
-        const team1_split = data[1][0].split(" ");
-        if (
-            (team1_split.at(-1).startsWith("-") ||
-             team1_split.at(-1).startsWith("+")) &&
-            !team1_split.at(-1).includes(".")
-        ) {
-            values.push(team1_split.slice(0, -1).join(" "));
-            values.push(team1_split.at(-1));
-        } else {
-            values.push(data[1][0]);
-            values.push("");
-        }
+            const team1_split = data[1][0].split(" ");
+            if (
+                (team1_split.at(-1).startsWith("-") ||
+                team1_split.at(-1).startsWith("+")) &&
+                !team1_split.at(-1).includes(".")
+            ) {
+                values.push(team1_split.slice(0, -1).join(" "));
+                values.push(team1_split.at(-1));
+            } else {
+                values.push(data[1][0]);
+                values.push("");
+            }
 
-        values.push(fdOdd1 ? fdOdd1 : "");
+            values.push(fdOdd1 ? fdOdd1 : "");
 
-        const team2_split = data[1][1].split(" ");
-        if (
-            (team2_split.at(-1).startsWith("-") ||
-             team2_split.at(-1).startsWith("+")) &&
-            !team2_split.at(-1).includes(".")
-        ) {
-            values.push(team2_split.slice(0, -1).join(" "));
-            values.push(team2_split.at(-1));
-        } else {
-            values.push(data[1][1]);
-            values.push("");
-        }
+            const team2_split = data[1][1].split(" ");
+            if (
+                (team2_split.at(-1).startsWith("-") ||
+                team2_split.at(-1).startsWith("+")) &&
+                !team2_split.at(-1).includes(".")
+            ) {
+                values.push(team2_split.slice(0, -1).join(" "));
+                values.push(team2_split.at(-1));
+            } else {
+                values.push(data[1][1]);
+                values.push("");
+            }
 
-        values.push(fdOdd2 ? fdOdd2 : "");
+            values.push(fdOdd2 ? fdOdd2 : "");
 
-        chrome.storage.local.set({ "two-way": values }, () => {
-            twoway_payout.value = values[0];
-            twoway_name1.querySelector("input").value = values[1];
-            twoway_realodds1.querySelector("input").value = values[2];
-            twoway_sportsbookodds1.querySelector("input").value = values[3];
-            twoway_name2.querySelector("input").value = values[4];
-            twoway_realodds2.querySelector("input").value = values[5];
-            twoway_sportsbookodds2.querySelector("input").value = values[6];
+            chrome.storage.local.set({ "two-way": values }, () => {
+                twoway_payout.value = values[0];
+                twoway_name1.querySelector("input").value = values[1];
+                twoway_realodds1.querySelector("input").value = values[2];
+                twoway_sportsbookodds1.querySelector("input").value = values[3];
+                twoway_name2.querySelector("input").value = values[4];
+                twoway_realodds2.querySelector("input").value = values[5];
+                twoway_sportsbookodds2.querySelector("input").value = values[6];
 
-            updatePopup();
-            switchView("ev-calculator");
+                updatePopup();
+                switchView("ev-calculator");
+                switchMode("two-way");
+            });
         });
+    } else {
+        chrome.storage.local.get(["three-way"], (res) => {
 
-    });
+            let payout = "";
+            let fdOdd1 = "";
+            let fdOdd2 = "";
+            let fdOdd3 = "";
+
+            if (res["three-way"] && Array.isArray(res["three-way"])) {
+                payout = res["three-way"][0];
+                fdOdd1 = res["three-way"][3];
+                fdOdd2 = res["three-way"][6];
+                fdOdd3 = res["three-way"][9];
+            }
+
+            const values = [];
+
+            values.push(payout ? payout : "50 (10 payout)");
+
+            const team1_split = data[1][0].split(" ");
+            if (
+                (team1_split.at(-1).startsWith("-") ||
+                team1_split.at(-1).startsWith("+")) &&
+                !team1_split.at(-1).includes(".")
+            ) {
+                values.push(team1_split.slice(0, -1).join(" "));
+                values.push(team1_split.at(-1));
+            } else {
+                values.push(data[1][0]);
+                values.push("");
+            }
+
+            values.push(fdOdd1 ? fdOdd1 : "");
+
+            const team2_split = data[1][1].split(" ");
+            if (
+                (team2_split.at(-1).startsWith("-") ||
+                team2_split.at(-1).startsWith("+")) &&
+                !team2_split.at(-1).includes(".")
+            ) {
+                values.push(team2_split.slice(0, -1).join(" "));
+                values.push(team2_split.at(-1));
+            } else {
+                values.push(data[1][1]);
+                values.push("");
+            }
+
+            values.push(fdOdd2 ? fdOdd2 : "");
+
+            const team3_split = data[1][2].split(" ");
+            if (
+                (team3_split.at(-1).startsWith("-") ||
+                team3_split.at(-1).startsWith("+")) &&
+                !team3_split.at(-1).includes(".")
+            ) {
+                values.push(team3_split.slice(0, -1).join(" "));
+                values.push(team3_split.at(-1));
+            } else {
+                values.push(data[1][2]);
+                values.push("");
+            }
+
+            values.push(fdOdd3 ? fdOdd3 : "");
+
+            chrome.storage.local.set({ "three-way": values }, () => {
+                threeway_payout.value = values[0];
+                threeway_name1.querySelector("input").value = values[1];
+                threeway_realodds1.querySelector("input").value = values[2];
+                threeway_sportsbookodds1.querySelector("input").value = values[3];
+                threeway_name2.querySelector("input").value = values[4];
+                threeway_realodds2.querySelector("input").value = values[5];
+                threeway_sportsbookodds2.querySelector("input").value = values[6];
+                threeway_name3.querySelector("input").value = values[7];
+                threeway_realodds3.querySelector("input").value = values[8];
+                threeway_sportsbookodds3.querySelector("input").value = values[9];
+
+                updatePopup();
+                switchView("ev-calculator");
+                switchMode("three-way");
+            });
+        });
+    }
 });
 
 modes.forEach(mode => {
@@ -226,6 +390,24 @@ twowayInputs.forEach(input => {
     });
 });
 
+threewayInputs.forEach(input => {
+    input.addEventListener("input", () => {
+        const values = [];
+        threewayInputs.forEach(i => {
+            values.push(i.value);
+        });
+        chrome.storage.local.set({ "three-way": values });
+        updatePopup();
+    });
+});
+
+more_calculator.addEventListener("input", () => {
+    const value = more_calculator.value;
+    chrome.storage.local.set({ "lastCalculator": value });
+    switchCalculator(value);
+    updatePopup();
+});
+
 manualSwitch.addEventListener("change", () => {
     manualMode = manualSwitch.checked;
 
@@ -234,6 +416,93 @@ manualSwitch.addEventListener("change", () => {
     updateSwitchLabels();
     toggleManualInputs(manualMode);
     updatePopup();
+});
+
+dotd_calculate_btn.addEventListener("click", async () => {
+    dotd_warning.innerText = "";
+    dotd_table_body.innerHTML = "";
+    
+    let rTabs = await chrome.tabs.query({ url: "*://*.realsports.io/*" });
+    if (!rTabs?.length) rTabs = await chrome.tabs.query({ url: "*://*.realapp.com/*" });
+    if (rTabs.length) {
+        chrome.runtime.sendMessage(
+            { type: "READ_REAL_DOTD", tabId: rTabs[0].id },
+            async (res) => {
+                console.log(res);
+                if (chrome.runtime.lastError || !res || res.error) {
+                    dotd_warning.innerText = "Could not read data from the Real Sports tab";
+                    return;
+                }
+    
+                const [teamNames, teamOdds, teamChosen] = res.text || [[], [], []];
+                console.log(teamNames, teamOdds, teamChosen);
+
+                if (!teamNames?.length && !teamOdds?.length && !teamChosen?.length) {
+                    dotd_warning.innerText = "No matching elements found";
+                    return;
+                }
+    
+                const max = Math.max(teamNames?.length || 0, teamOdds?.length || 0, teamChosen?.length || 0);
+                const fdTabs = await chrome.tabs.query({ url: "https://sportsbook.fanduel.com/*" });
+                const fdTabId = fdTabs[0]?.id;
+
+                const getFdOdds = (teamName) => new Promise((resolve) => {
+                    if (fdTabId === undefined || fdTabId === null) {
+                        resolve("");
+                        return;
+                    }
+
+                    chrome.runtime.sendMessage(
+                        {
+                            type: "READ_FD_ML",
+                            tabId: fdTabId,
+                            teamName,
+                            teamNames: TEAM_MAP[teamName]
+                                ? Object.values(TEAM_MAP[teamName])
+                                : [teamName]
+                        },
+                        (fdRes) => {
+                            console.log(fdRes);
+                            if (chrome.runtime.lastError || !fdRes || fdRes.error) {
+                                resolve("");
+                                return;
+                            }
+                            resolve(fdRes.text || "");
+                        }
+                    );
+                });
+
+                const rows = [];
+                for (let i = 0; i < max; i++) {
+                    const fdOdds = await getFdOdds(teamNames?.[i] ?? "");
+                    let ev;
+
+                    if (fdOdds) {
+                        const cur = teamChosen?.[i] ?? "";
+                        const sortedArray = [...teamChosen].sort((a, b) => b - a);
+                        const rank = sortedArray.indexOf(cur) + 1;
+                        const dec = Math.round((americanToDecimal(fdOdds) - 1) * 100);
+                        const prob = americanToImpliedProb(fdOdds) * 100;
+                        //fix ev
+                        ev = Math.round((Math.min(20*rank, 200) + dec) * prob * 100) / 100;
+                    } else {
+                        ev = "";
+                    }
+
+                    rows.push([
+                        teamNames?.[i] ?? "",
+                        teamOdds?.[i] ?? "",
+                        teamChosen?.[i] ?? "",
+                        fdOdds,
+                        ev
+                    ]);
+                }
+
+                renderDotdTable(rows);
+                chrome.storage.local.set({ dotdTableRows: rows });
+            }
+        );
+    }
 });
 
 import { TEAM_MAP } from "./team_map.js";
@@ -280,6 +549,28 @@ function switchMode(targetId, save = true) {
     // Save state
     if (save) {
         chrome.storage.local.set({ lastMode: targetId });
+    }
+}
+
+function switchCalculator(targetId, save = true) {
+    const current = document.querySelector(".view3.active");
+    const target = document.getElementById(targetId);
+
+    if (current === target) return;
+
+    if (current) {
+        current.classList.remove("active");
+    }
+
+    // Activate target
+    target.classList.add("active");
+
+    // Update tabs
+    calculators.forEach(t => t.classList.toggle("active", t.dataset.calculator === targetId));
+
+    // Save state
+    if (save) {
+        chrome.storage.local.set({ lastCalculator: targetId });
     }
 }
 
@@ -349,16 +640,26 @@ function sendTeamsToFanDuel() {
         const raw4 = realTextState[3].split("\n")[0].split(" ");
         if (!raw3 || !raw4) return;
 
-        const teamName3 = [raw3[0], raw3[1]];
-        const teamName4 = [raw4[0], raw4[1]];
+        let teamName3 = [raw3[0], raw3[1]];
+        let teamName4 = [raw4[0], raw4[1]];
+
+        if (mTabs[1] === "Spread") {
+            teamName3 = [teamA, raw3[1]];
+            teamName4 = [teamB, raw4[1]];
+        }
 
         if (realTextState[4] && realTextState[5]) {
             const raw5 = realTextState[4].split("\n")[0].split(" ");
             const raw6 = realTextState[5].split("\n")[0].split(" ");
             if (!raw5 || !raw6) return;
 
-            const teamName5 = [teamA, raw5[1]];
-            const teamName6 = [teamB, raw6[1]];
+            let teamName5 = [raw5[0], raw5[1]];
+            let teamName6 = [raw6[0], raw6[1]];
+
+            if (mTabs[2] === "Spread") {
+                teamName5 = [teamA, raw5[1]];
+                teamName6 = [teamB, raw6[1]];
+            }
 
             chrome.tabs.query(
                 { url: "https://sportsbook.fanduel.com/*" },
@@ -367,7 +668,8 @@ function sendTeamsToFanDuel() {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: "SET_ACTIVE_TEAMS",
                         teams: [teamA, teamB, teamName3, teamName4, teamName5, teamName6],
-                        ufc: ufc
+                        ufc: ufc,
+                        mTabs: mTabs
                     });
                 }
             );
@@ -379,7 +681,8 @@ function sendTeamsToFanDuel() {
                     chrome.tabs.sendMessage(tabs[0].id, {
                         type: "SET_ACTIVE_TEAMS",
                         teams: [teamA, teamB, teamName3, teamName4],
-                        ufc: ufc
+                        ufc: ufc,
+                        mTabs: mTabs
                     });
                 }
             );
@@ -392,7 +695,8 @@ function sendTeamsToFanDuel() {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     type: "SET_ACTIVE_TEAMS",
                     teams: [teamA, teamB],
-                    ufc: ufc
+                    ufc: ufc,
+                    mTabs: mTabs
                 });
             }
         );
@@ -471,6 +775,109 @@ function worstCaseFairProb(oddsA, oddsB, idx) {
             devigAdditive(pA, pB),
             devigPower(pA, pB)
         ].map(([a, b]) => Math.min(Math.max(idx === 0 ? a : b, 0), 0.999))
+    );
+}
+
+function devigMultiplicativeThreeWay(p1, p2, p3) {
+    const sum = p1 + p2 + p3;
+    return [p1 / sum, p2 / sum, p3 / sum];
+}
+
+function devigAdditiveThreeWay(p1, p2, p3) {
+    const vig = p1 + p2 + p3 - 1;
+    return [p1 - vig / 3, p2 - vig / 3, p3 - vig / 3];
+}
+
+function devigPowerThreeWay(p1, p2, p3, iters = 1000) {
+    let lo = 0, hi = 5;
+    for (let i = 0; i < iters; i++) {
+        const mid = (lo + hi) / 2;
+        const sum = Math.pow(p1, mid) + Math.pow(p2, mid) + Math.pow(p3, mid);
+        sum > 1 ? (lo = mid) : (hi = mid);
+    }
+    const k = (lo + hi) / 2;
+    return [Math.pow(p1, k), Math.pow(p2, k), Math.pow(p3, k)];
+}
+
+function devigShinThreeWay(p1, p2, p3, iters = 1000, tolerance = 1e-6) {
+    let impliedProbabilities = [p1, p2, p3];
+    const n = impliedProbabilities.length;
+    const sumZ = impliedProbabilities.reduce((sum, z) => sum + z, 0);
+    
+    // If the market has no vig or invalid inputs, return normalized values as a fallback
+    if (sumZ <= 1.0 || n === 0) {
+        return impliedProbabilities.map(z => sumZ === 0 ? 0 : z / sumZ);
+    }
+
+    // Initial guess for the insider fraction epsilon
+    let epsilon = 0.05; 
+
+    for (let iter = 0; iter < iters; iter++) {
+        let f = 0.0;
+        let df = 0.0;
+
+        for (const z of impliedProbabilities) {
+            const sqrtTerm = Math.sqrt(epsilon * epsilon + 4 * (1 - epsilon) * (z * z) / sumZ);
+            
+            // Value of the function f(epsilon) = sum(p_i)
+            f += (sqrtTerm - epsilon) / (2 * (1 - epsilon));
+
+            // Derivative of the component with respect to epsilon
+            const dSqrt = (2 * epsilon - 4 * (z * z) / sumZ) / (2 * sqrtTerm);
+            const numerator = dSqrt - 1;
+            const denominator = 2 * (1 - epsilon);
+            const componentDeriv = (numerator * denominator + 2 * (sqrtTerm - epsilon)) / (denominator * denominator);
+            
+            df += componentDeriv;
+        }
+
+        // Target sum of true probabilities is 1.0
+        const fValue = f - 1.0;
+
+        // Check for convergence
+        if (Math.abs(fValue) < tolerance) {
+            break;
+        }
+
+        // Newton-Raphson step update
+        if (Math.abs(df) > 1e-12) {
+            epsilon = epsilon - fValue / df;
+        } else {
+            break; // Avoid division by zero if derivative flattens
+        }
+
+        // Bounds guardrails to keep epsilon physically meaningful
+        if (epsilon < 0) epsilon = 1e-6;
+        if (epsilon >= 1) epsilon = 1 - 1e-6;
+    }
+
+    // Reconstruct the true probabilities using the optimized epsilon
+    let trueProbabilities = [];
+    let trueSum = 0.0;
+    
+    for (let i = 0; i < n; i++) {
+        const z = impliedProbabilities[i];
+        const sqrtTerm = Math.sqrt(epsilon * epsilon + 4 * (1 - epsilon) * (z * z) / sumZ);
+        const p = (sqrtTerm - epsilon) / (2 * (1 - epsilon));
+        trueProbabilities.push(p);
+        trueSum += p;
+    }
+
+    // Final normalization adjustment to handle minor floating-point errors
+    return trueProbabilities.map(p => p / trueSum);
+}
+
+function worstCaseFairProbThreeWay(oddsA, oddsB, oddsC, idx) {
+    const pA = americanToImpliedProb(oddsA);
+    const pB = americanToImpliedProb(oddsB);
+    const pC = americanToImpliedProb(oddsC);
+    return Math.min(
+        ...[
+            devigMultiplicativeThreeWay(pA, pB, pC),
+            devigAdditiveThreeWay(pA, pB, pC),
+            devigPowerThreeWay(pA, pB, pC),
+            devigShinThreeWay(pA, pB, pC)
+        ].map(([a, b, c]) => Math.min(Math.max(idx === 0 ? a : idx === 1 ? b : c, 0), 0.999))
     );
 }
 
@@ -622,6 +1029,14 @@ function updatePopup() {
     if (realTextState[2] && realTextState[3]) {
         secondTable.classList.add("active");
 
+        if (mTabs[1] === "Spread") {
+            secondTableHeader.innerText = "Spread";
+        } else if (mTabs[1] === "Total") {
+            secondTableHeader.innerText = "Total";
+        } else if (mTabs[1] === "Run in 1st inning?") {
+            secondTableHeader.innerText = "RFI";
+        }
+
         const t3 = realTextState[2]?.split("\n")[0]?.trim();
         const t4 = realTextState[3]?.split("\n")[0]?.trim();
 
@@ -682,6 +1097,14 @@ function updatePopup() {
 
     if (realTextState[4] && realTextState[5]) {
         thirdTable.classList.add("active");
+
+        if (mTabs[2] === "Spread") {
+            thirdTableHeader.innerText = "Spread";
+        } else if (mTabs[2] === "Total") {
+            thirdTableHeader.innerText = "Total";
+        } else if (mTabs[2] === "Run in 1st inning?") {
+            thirdTableHeader.innerText = "RFI";
+        }
 
         const t5 = realTextState[4]?.split("\n")[0]?.trim();
         const t6 = realTextState[5]?.split("\n")[0]?.trim();
@@ -841,13 +1264,13 @@ function updateEVCalculator() {
     bookOdd1 = correctAmericanOdd(bookOdd1);
     bookOdd2 = correctAmericanOdd(bookOdd2);
 
-    const pReal1 = americanToDecimal(realOdd1);
-    const pReal2 = americanToDecimal(realOdd2);
+    let pReal1 = americanToDecimal(realOdd1);
+    let pReal2 = americanToDecimal(realOdd2);
 
-    const pFair1 = worstCaseFairProb(parseInt(bookOdd1), parseInt(bookOdd2), 0);
-    const pFair2 = worstCaseFairProb(parseInt(bookOdd1), parseInt(bookOdd2), 1);
+    let pFair1 = worstCaseFairProb(parseInt(bookOdd1), parseInt(bookOdd2), 0);
+    let pFair2 = worstCaseFairProb(parseInt(bookOdd1), parseInt(bookOdd2), 1);
 
-    const bet = twoway_payout.value;
+    let bet = twoway_payout.value;
     let maxKarma = 0, payout = 0;
     if (bet === "50 (5 payout)") {
         maxKarma = 50;
@@ -869,10 +1292,10 @@ function updateEVCalculator() {
         payout = 10;
     }
 
-    const zeroKarmaEv1 = calculateZeroKarmaEV(pFair1, pReal1, payout);
-    const ev1 = calculateKarmaEV(pFair1, pReal1, maxKarma);
-    const zeroKarmaEv2 = calculateZeroKarmaEV(pFair2, pReal2, payout);
-    const ev2 = calculateKarmaEV(pFair2, pReal2, maxKarma);
+    let zeroKarmaEv1 = calculateZeroKarmaEV(pFair1, pReal1, payout);
+    let ev1 = calculateKarmaEV(pFair1, pReal1, maxKarma);
+    let zeroKarmaEv2 = calculateZeroKarmaEV(pFair2, pReal2, payout);
+    let ev2 = calculateKarmaEV(pFair2, pReal2, maxKarma);
 
     twoway_maxbet_header.innerText = `${maxKarma} Bet EV`;
 
@@ -885,7 +1308,7 @@ function updateEVCalculator() {
     twoway_name2_max_ev.innerText = ev2;
     twoway_name2_fair.innerText = impliedProbToAmerican(pFair2);
 
-    const maxEv = Math.max(ev1, ev2, zeroKarmaEv1, zeroKarmaEv2);
+    let maxEv = Math.max(ev1, ev2, zeroKarmaEv1, zeroKarmaEv2);
 
     if (zeroKarmaEv1 == maxEv) {
         twoway_name1_zero_ev.classList.add("best-ev");
@@ -907,7 +1330,333 @@ function updateEVCalculator() {
     } else {
         twoway_name2_max_ev.classList.remove("best-ev");
     }
+
+    threeway_result_header.classList.remove("active");
+    threeway_result.classList.remove("active");
+
+    if (!threeway_name1.querySelector("input").value || !threeway_name2.querySelector("input").value || !threeway_name3.querySelector("input").value) {
+        threeway_warning.innerText = "Enter a team name";
+        return;
+    }
+
+    if (!threeway_sportsbookodds1.querySelector("input").value || !threeway_sportsbookodds2.querySelector("input").value || !threeway_sportsbookodds3.querySelector("input").value) {
+        threeway_warning.innerText = "Enter a sportsbook odd";
+        return;
+    }
+
+    realOdd1 = threeway_realodds1.querySelector("input").value;
+    realOdd2 = threeway_realodds2.querySelector("input").value;
+    let realOdd3 = threeway_realodds3.querySelector("input").value;
+    bookOdd1 = threeway_sportsbookodds1.querySelector("input").value;
+    bookOdd2 = threeway_sportsbookodds2.querySelector("input").value;
+    let bookOdd3 = threeway_sportsbookodds3.querySelector("input").value;
+
+    if (!realOdd1) {
+        realOdd1 = "+100";
+    }
+    if (!realOdd2) {
+        realOdd2 = "+100";
+    }
+    if (!realOdd3) {
+        realOdd3 = "+100";
+    }
+
+    if (!correctOddsInput(realOdd1) || !correctOddsInput(realOdd2) || !correctOddsInput(realOdd3)) {
+        threeway_warning.innerText = "Incorrect real odds format";
+        return;
+    }
+
+    if (!correctOddsInput(bookOdd1) || !correctOddsInput(bookOdd2) || !correctOddsInput(bookOdd3)) {
+        threeway_warning.innerText = "Incorrect sportsbook odds format";
+        return;
+    }
+
+    threeway_warning.innerText = "";
+    threeway_result_header.classList.add("active");
+    threeway_result.classList.add("active");
+
+    realOdd1 = correctAmericanOdd(realOdd1);
+    realOdd2 = correctAmericanOdd(realOdd2);
+    realOdd3 = correctAmericanOdd(realOdd3);
+    bookOdd1 = correctAmericanOdd(bookOdd1);
+    bookOdd2 = correctAmericanOdd(bookOdd2);
+    bookOdd3 = correctAmericanOdd(bookOdd3);
+
+    pReal1 = americanToDecimal(realOdd1);
+    pReal2 = americanToDecimal(realOdd2);
+    let pReal3 = americanToDecimal(realOdd3);
+
+    pFair1 = worstCaseFairProbThreeWay(parseInt(bookOdd1), parseInt(bookOdd2), parseInt(bookOdd3), 0);
+    pFair2 = worstCaseFairProbThreeWay(parseInt(bookOdd1), parseInt(bookOdd2), parseInt(bookOdd3), 1);
+    let pFair3 = worstCaseFairProbThreeWay(parseInt(bookOdd1), parseInt(bookOdd2), parseInt(bookOdd3), 2);
+
+    bet = threeway_payout.value;
+    maxKarma = 0, payout = 0;
+    if (bet === "50 (5 payout)") {
+        maxKarma = 50;
+        payout = 5;
+    } else if (bet === "50 (10 payout)") {
+        maxKarma = 50;
+        payout = 10;
+    } else if (bet === "100 (5 payout)") {
+        maxKarma = 100;
+        payout = 5;
+    } else if (bet === "100 (10 payout)") {
+        maxKarma = 100;
+        payout = 10;
+    } else if (bet === "200") {
+        maxKarma = 200;
+        payout = 10;
+    } else if (bet === "300") {
+        maxKarma = 300;
+        payout = 10;
+    }
+
+    zeroKarmaEv1 = calculateZeroKarmaEV(pFair1, pReal1, payout);
+    ev1 = calculateKarmaEV(pFair1, pReal1, maxKarma);
+    zeroKarmaEv2 = calculateZeroKarmaEV(pFair2, pReal2, payout);
+    ev2 = calculateKarmaEV(pFair2, pReal2, maxKarma);
+    let zeroKarmaEv3 = calculateZeroKarmaEV(pFair3, pReal3, payout);
+    let ev3 = calculateKarmaEV(pFair3, pReal3, maxKarma);
+
+    threeway_maxbet_header.innerText = `${maxKarma} Bet EV`;
+
+    threeway_result_name1.innerText = threeway_name1.querySelector("input").value;
+    threeway_name1_zero_ev.innerText = zeroKarmaEv1;
+    threeway_name1_max_ev.innerText = ev1;
+    threeway_name1_fair.innerText = impliedProbToAmerican(pFair1);
+    threeway_result_name2.innerText = threeway_name2.querySelector("input").value;
+    threeway_name2_zero_ev.innerText = zeroKarmaEv2;
+    threeway_name2_max_ev.innerText = ev2;
+    threeway_name2_fair.innerText = impliedProbToAmerican(pFair2);
+    threeway_result_name3.innerText = threeway_name3.querySelector("input").value;
+    threeway_name3_zero_ev.innerText = zeroKarmaEv3;
+    threeway_name3_max_ev.innerText = ev3;
+    threeway_name3_fair.innerText = impliedProbToAmerican(pFair3);
+
+    maxEv = Math.max(ev1, ev2, ev3, zeroKarmaEv1, zeroKarmaEv2, zeroKarmaEv3);
+
+    if (zeroKarmaEv1 == maxEv) {
+        threeway_name1_zero_ev.classList.add("best-ev");
+    } else {
+        threeway_name1_zero_ev.classList.remove("best-ev");
+    }
+    if (ev1 == maxEv) {
+        threeway_name1_max_ev.classList.add("best-ev");
+    } else {
+        threeway_name1_max_ev.classList.remove("best-ev");
+    }
+    if (zeroKarmaEv2 == maxEv) {
+        threeway_name2_zero_ev.classList.add("best-ev");
+    } else{
+        threeway_name2_zero_ev.classList.remove("best-ev");
+    }
+    if (ev2 == maxEv) {
+        threeway_name2_max_ev.classList.add("best-ev");
+    } else {
+        threeway_name2_max_ev.classList.remove("best-ev");
+    }
+    if (zeroKarmaEv3 == maxEv) {
+        threeway_name3_zero_ev.classList.add("best-ev");
+    } else{
+        threeway_name3_zero_ev.classList.remove("best-ev");
+    }
+    if (ev3 == maxEv) {
+        threeway_name3_max_ev.classList.add("best-ev");
+    } else {
+        threeway_name3_max_ev.classList.remove("best-ev");
+    }
 }
+
+// ================== PSP PLAYER LIST ==================
+class PSPPlayerList {
+    constructor(inputId, oddId, placementId, btnId, listId, deleteAllBtnId, storageKey, type) {
+        this.input = document.getElementById(inputId);
+        this.oddInput = document.getElementById(oddId);
+        this.placementInput = document.getElementById(placementId);
+        this.btn = document.getElementById(btnId);
+        this.list = document.getElementById(listId);
+        this.deleteAllBtn = document.getElementById(deleteAllBtnId);
+        this.storageKey = storageKey;
+        this.inputStorageKey = `${storageKey}-input-name`;
+        this.oddStorageKey = `${storageKey}-input-odd`;
+        this.placementStorageKey = `${storageKey}-input-placement`;
+        this.type = type; // "sport" or "ingame"
+        this.players = [];
+        
+        this.init();
+    }
+    
+    init() {
+        // Load players from storage
+        chrome.storage.local.get([this.storageKey], (res) => {
+            if (res[this.storageKey]) {
+                this.players = res[this.storageKey];
+                this.render();
+            }
+        });
+        
+        // Load input values from storage
+        chrome.storage.local.get([this.inputStorageKey, this.oddStorageKey, this.placementStorageKey], (res) => {
+            if (res[this.inputStorageKey]) this.input.value = res[this.inputStorageKey];
+            if (res[this.oddStorageKey]) this.oddInput.value = res[this.oddStorageKey];
+            if (res[this.placementStorageKey]) this.placementInput.value = res[this.placementStorageKey];
+        });
+        
+        // Add event listeners
+        this.btn.addEventListener("click", () => this.addPlayer());
+        this.input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") this.addPlayer();
+        });
+        this.input.addEventListener("input", () => this.saveInputs());
+        this.oddInput.addEventListener("input", () => this.saveInputs());
+        this.placementInput.addEventListener("input", () => this.saveInputs());
+        this.deleteAllBtn.addEventListener("click", () => this.deleteAll());
+    }
+    
+    calculateEV(odd, placementStr) {
+        // Parse placement as number
+        const placement = parseFloat(placementStr);
+        if (!odd || !placementStr || isNaN(placement)) return null;
+        
+        try {
+            const impliedProb = americanToImpliedProb(parseInt(correctAmericanOdd(odd)));
+            let payout;
+            
+            if (this.type === "ingame") {
+                // PSP in game: min(100, 10*placement)
+                payout = Math.min(100, 10 * placement);
+            } else {
+                // PSP sport: min(300, 10*min(placement, 20) + max(0, placement-20))
+                payout = Math.min(300, 10 * Math.min(placement, 20) + Math.max(0, placement - 20));
+            }
+            
+            const ev = (impliedProb * payout).toFixed(2);
+            return ev;
+        } catch (e) {
+            return null;
+        }
+    }
+    
+    addPlayer() {
+        const playerName = this.input.value.trim();
+        const odd = this.oddInput.value.trim();
+        const placement = this.placementInput.value.trim();
+        
+        if (!playerName) return;
+        
+        this.players.push({
+            name: playerName,
+            odd: odd,
+            placement: placement
+        });
+        this.input.value = "";
+        this.oddInput.value = "";
+        this.placementInput.value = "";
+        this.saveInputs();
+        this.save();
+        this.render();
+    }
+    
+    removePlayer(index) {
+        this.players.splice(index, 1);
+        this.save();
+        this.render();
+    }
+    
+    deleteAll() {
+        this.players = [];
+        this.save();
+        this.render();
+    }
+    
+    updatePlayer(index, field, value) {
+        this.players[index][field] = value;
+        this.save();
+        this.render();
+    }
+    
+    saveInputs() {
+        chrome.storage.local.set({
+            [this.inputStorageKey]: this.input.value,
+            [this.oddStorageKey]: this.oddInput.value,
+            [this.placementStorageKey]: this.placementInput.value
+        });
+    }
+    
+    save() {
+        chrome.storage.local.set({ [this.storageKey]: this.players });
+    }
+    
+    render() {
+        this.list.innerHTML = "";
+        
+        // Find the maximum EV value
+        let maxEV = -Infinity;
+        this.players.forEach((player) => {
+            const ev = this.calculateEV(player.odd, player.placement);
+            if (ev !== null) {
+                const evNum = parseFloat(ev);
+                if (evNum > maxEV) {
+                    maxEV = evNum;
+                }
+            }
+        });
+        
+        this.players.forEach((player, index) => {
+            const li = document.createElement("li");
+            li.className = "psp-list-item";
+            
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "psp-list-item-name";
+            nameSpan.textContent = player.name;
+            
+            const inputsContainer = document.createElement("div");
+            inputsContainer.className = "psp-list-item-inputs";
+            
+            const oddInput = document.createElement("input");
+            oddInput.type = "text";
+            oddInput.placeholder = "Odd";
+            oddInput.className = "psp-item-input";
+            oddInput.value = player.odd || "";
+            oddInput.addEventListener("change", (e) => this.updatePlayer(index, "odd", e.target.value));
+            
+            const placementInput = document.createElement("input");
+            placementInput.type = "text";
+            placementInput.placeholder = "Placement";
+            placementInput.className = "psp-item-input";
+            placementInput.value = player.placement || "";
+            placementInput.addEventListener("change", (e) => this.updatePlayer(index, "placement", e.target.value));
+            
+            const evSpan = document.createElement("span");
+            evSpan.className = "psp-item-ev";
+            const ev = this.calculateEV(player.odd, player.placement);
+            evSpan.textContent = ev !== null ? ev : "–";
+            
+            if (ev !== null && parseFloat(ev) === maxEV) {
+                evSpan.classList.add("best-ev");
+            }
+            
+            const removeBtn = document.createElement("button");
+            removeBtn.className = "psp-remove-btn";
+            removeBtn.textContent = "Remove";
+            removeBtn.addEventListener("click", () => this.removePlayer(index));
+            
+            inputsContainer.appendChild(oddInput);
+            inputsContainer.appendChild(placementInput);
+            inputsContainer.appendChild(evSpan);
+            inputsContainer.appendChild(removeBtn);
+            
+            li.appendChild(nameSpan);
+            li.appendChild(inputsContainer);
+            this.list.appendChild(li);
+        });
+    }
+}
+
+// Initialize PSP player lists
+const pspList = new PSPPlayerList("psp-player-input", "psp-odd-input", "psp-placement-input", "psp-add-btn", "psp-player-list", "psp-delete-all-btn", "psp-players", "sport");
+const psp2List = new PSPPlayerList("psp2-player-input", "psp2-odd-input", "psp2-placement-input", "psp2-add-btn", "psp2-player-list", "psp2-delete-all-btn", "psp2-players", "ingame");
 
 // ================== LIVE UPDATES ==================
 chrome.runtime.onMessage.addListener((message) => {
@@ -916,12 +1665,13 @@ chrome.runtime.onMessage.addListener((message) => {
             realTextState = message.text;
             realTeamNames = message.teamName;
             ufc = message.ufc;
+            mTabs = message.mTabs;
             updatePopup();
             sendTeamsToFanDuel();
         }
     }
 
-    if (message.type ==="POLL_UPDATE") {
+    if (message.type === "POLL_UPDATE") {
         realPollState = message.text;
         updatePopup();
     }
@@ -934,7 +1684,8 @@ chrome.runtime.onMessage.addListener((message) => {
 
 // ================== INITIAL LOAD ==================
 (async () => {
-    const rTabs = await chrome.tabs.query({ url: "https://realsports.io/*" });
+    let rTabs = await chrome.tabs.query({ url: "*://*.realsports.io/*" });
+    if (!rTabs?.length) rTabs = await chrome.tabs.query({ url: "*://*.realapp.com/*" });
     if (rTabs.length) {
         chrome.runtime.sendMessage(
             { type: "READ_REAL_TAB", tabId: rTabs[0].id },
@@ -943,6 +1694,7 @@ chrome.runtime.onMessage.addListener((message) => {
                     realTextState = res.text;
                     realTeamNames = res.teamName;
                     ufc = res.ufc;
+                    mTabs = res.mTabs;
                     realReady = true;
                     maybeRender();
                     sendTeamsToFanDuel();
