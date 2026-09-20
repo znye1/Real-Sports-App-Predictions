@@ -14,11 +14,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         messageToSend = { type: "GET_FD_TEXT" };
     }
 
+    if (request.type === "READ_FD_ML") {
+        messageToSend = {
+            type: "GET_FD_ML",
+            teamName: request.teamName,
+            teamNames: request.teamNames
+        };
+    }
+
+    if (request.type === "READ_REAL_DOTD") {
+        messageToSend = { type: "GET_REAL_DOTD" };
+    }
+
     // If it's not a read request we care about, ignore it
     if (!messageToSend) return;
 
     const tabId = request.tabId;
-    if (!tabId) {
+    if (tabId === undefined || tabId === null) {
         sendResponse({ text: [], error: "Invalid tab ID" });
         return;
     }
@@ -33,7 +45,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             return;
         }
 
-        if (!response || !Array.isArray(response.text)) {
+        const validText = Array.isArray(response?.text) || typeof response?.text === "string";
+        if (!response || !validText) {
             sendResponse({
                 text: [],
                 error: "No response from content script"
@@ -44,7 +57,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({
             text: response.text,
             teamName: response.teamName || [],
-            ufc: response.ufc || false
+            ufc: response.ufc || false,
+            mTabs: response.mTabs || []
         });
     });
 
