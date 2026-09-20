@@ -43,12 +43,29 @@ function extractText() {
     });
 
 
-    let total = false, spread = false;
-    const marketTabs = document.querySelectorAll("div.r-1i10wst");
+    const mTabs = [];
+    let total = false, spread = false, rfi = false;
+    const marketTabs = document.querySelectorAll("div.r-1qsk4np");
     marketTabs.forEach (tab => {
         const tabText = tab.innerText.trim();
-        if (tabText === "Total") total = true;
-        if (tabText === "Spread") spread = true;     
+        if (tabText === "Game Winner") {
+            mTabs.push("Game Winner");
+        }
+        if (tabText === "Total") {
+            total = true;
+            mTabs.push("Total");
+        }
+        if (tabText === "Spread") {
+            spread = true;
+            mTabs.push("Spread");
+        }
+        if (tabText === "Run in 1st inning?") {
+            rfi = true;
+            mTabs.push("Run in 1st inning?");
+        }
+        if (tabText === "To Advance") {
+            mTabs.push("To Advance");
+        }
     });
 
     const rDivs = document.querySelectorAll("div.r-adyw6z");
@@ -59,6 +76,7 @@ function extractText() {
     let maxSelected = 2;
     if (total) maxSelected += 2;
     if (spread) maxSelected += 2;
+    if (rfi) maxSelected += 2;
 
     rDivs.forEach(rDiv => {
         const wrapper = rDiv.parentElement;                  // wrapper div around rDiv
@@ -72,13 +90,7 @@ function extractText() {
         }
     });
 
-    if (total && spread) {
-        return [[result[0] || "", result[1] || "", result[4] || "", result[5] || "", result[2] || "", result[3] || ""], ufc];
-    }
-    if (total) {
-        return [[result[0] || "", result[1] || "", result[2] || "", result[3] || ""], ufc];
-    }
-    return [[result[0] || "", result[1] || ""], ufc];
+    return [result, ufc, mTabs];
 }
 
 function isStrictNumberString(str) {
@@ -92,11 +104,10 @@ function extractTeamName() {
     rDivs.forEach(rDiv => {
         const rTeamName = rDiv.innerText.trim();
 
-        if ((!rTeamName.includes("-") || rTeamName.length > 9) && !isStrictNumberString(rTeamName)) {
+        if ((!(isStrictNumberString(rTeamName[0]) && rTeamName.includes("-") || (isStrictNumberString(rTeamName[0]) && rTeamName.includes("·"))) || rTeamName.length > 9) && !isStrictNumberString(rTeamName)) {
             result.push(rTeamName);
         }
     })
-
     return [result[0] || "", result[1] || ""];
 }
 
@@ -160,8 +171,37 @@ function extractPolls() {
 
         pollList.push([pollName, choices, chosen, bets, pollStatus]);
     }
+    console.log(pollList);
 
     return pollList;
+}
+
+function extractDOTD() {
+    const divs = document.querySelector("div.r-16wqof.r-wk8lta");
+    const teamNames = [];
+    const teamOdds = [];
+    const teamChosen = [];
+
+    if (!divs) {
+        return [teamNames, teamOdds, teamChosen];
+    }
+
+    for (const teamDiv of divs.childNodes) {
+        const details = teamDiv.firstElementChild?.children?.[1];
+        const odds = details?.firstElementChild?.children?.[0]?.innerText?.trim();
+        const chosen = details?.children?.[1]?.firstElementChild?.children?.[0]?.innerText?.trim();
+
+        if (!details || !odds || !chosen) {
+            continue;
+        }
+
+        const name = details.firstElementChild.innerText?.trim().split(" ")[0];
+        teamNames.push(name || "");
+        teamOdds.push(odds);
+        teamChosen.push(chosen);
+    }
+
+    return [teamNames, teamOdds, teamChosen];
 }
 
 // Start observing DOM changes for live updates
@@ -170,15 +210,15 @@ function startObserving() {
     let lastSerialized = "";
 
     const sendUpdate = () => {
-        const [text, ufc] = extractText();
+        const [text, ufc, mTabs] = extractText();
 
         const teamName = extractTeamName();
         const pollList = extractPolls();
-        const serialized = JSON.stringify({ text, teamName, pollList });
+        const serialized = JSON.stringify({ text, teamName, pollList, mTabs });
         if (serialized !== lastSerialized) {
             lastSerialized = serialized;
             chrome.runtime.sendMessage({ type: "POLL_UPDATE", text: pollList});
-            chrome.runtime.sendMessage({ type: "TEXT_UPDATE_REAL", text: text, teamName: teamName, ufc: ufc });
+            chrome.runtime.sendMessage({ type: "TEXT_UPDATE_REAL", text: text, teamName: teamName, ufc: ufc, mTabs: mTabs });
         }
     };
 
@@ -199,12 +239,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "START_OBSERVING") {
         startObserving();
     } else if (request.type === "GET_REAL_TEXT") {
-        const [text, ufc] = extractText();
+        const [text, ufc, mTabs] = extractText();
         const teamName = extractTeamName();
-        sendResponse({ text: text, teamName: teamName, ufc: ufc });
+        sendResponse({ text: text, teamName: teamName, ufc: ufc, mTabs: mTabs });
     } else if (request.type === "GET_REAL_POLLS") {
         const pollList = extractPolls();
         sendResponse({ text: pollList });
+    } else if (request.type === "GET_REAL_DOTD") {
+        const [teamNames, teamOdds, teamChosen] = extractDOTD();
+        sendResponse({ text: [teamNames, teamOdds, teamChosen] });
     }
     return true; // Keep channel open for async responses
 });
