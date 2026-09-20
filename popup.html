@@ -88,41 +88,10 @@
                 </tbody>
             </table>
 
-            <table id="third-table">
-                <thead>
-                    <tr>
-                        <th>Spread</th>
-                        <th>Real %</th>
-                        <th>FD</th>
-                        <th>EV</th>
-                        <th>Fair</th>
-                        <th>Stake</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td id="team5"><span class="value">–</span></td>
-                        <td id="output5"><span class="value">–</span></td>
-                        <td id="odds5"><span class="value">–</span></td>
-                        <td id="ev5"><span class="value">–</span></td>
-                        <td id="fair5"><span class="value">–</span></td>
-                        <td id="stake5"><span class="value">–</span></td>
-                    </tr>
-                    <tr>
-                        <td id="team6"><span class="value">–</span></td>
-                        <td id="output6"><span class="value">–</span></td>
-                        <td id="odds6"><span class="value">–</span></td>
-                        <td id="ev6"><span class="value">–</span></td>
-                        <td id="fair6"><span class="value">–</span></td>
-                        <td id="stake6"><span class="value">–</span></td>
-                    </tr>
-                </tbody>
-            </table>
-
             <table id="second-table">
                 <thead>
                     <tr>
-                        <th>Total</th>
+                        <th id="second-table-header">Spread</th>
                         <th>Real %</th>
                         <th>FD</th>
                         <th>EV</th>
@@ -150,6 +119,37 @@
                 </tbody>
             </table>
 
+            <table id="third-table">
+                <thead>
+                    <tr>
+                        <th id="third-table-header">Total</th>
+                        <th>Real %</th>
+                        <th>FD</th>
+                        <th>EV</th>
+                        <th>Fair</th>
+                        <th>Stake</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="team5"><span class="value">–</span></td>
+                        <td id="output5"><span class="value">–</span></td>
+                        <td id="odds5"><span class="value">–</span></td>
+                        <td id="ev5"><span class="value">–</span></td>
+                        <td id="fair5"><span class="value">–</span></td>
+                        <td id="stake5"><span class="value">–</span></td>
+                    </tr>
+                    <tr>
+                        <td id="team6"><span class="value">–</span></td>
+                        <td id="output6"><span class="value">–</span></td>
+                        <td id="odds6"><span class="value">–</span></td>
+                        <td id="ev6"><span class="value">–</span></td>
+                        <td id="fair6"><span class="value">–</span></td>
+                        <td id="stake6"><span class="value">–</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
             <div id="pregame"></div>
         </section>
 
@@ -173,17 +173,17 @@
                 <div class="mode-wrapper">  
                     <button class="mode active" data-mode="two-way">2-Way</button>
                     <button class="mode" data-mode="three-way">3-Way</button>
-                    <button class="mode" data-mode="psp">PSP</button>
+                    <button class="mode" data-mode="more">More</button>
                 </div>
 
                 <section id="two-way" class="view2 active">
                     <div class="payout-control">
                         <span class="payout-label">Max Bet:</span>
                         <select name="payout" id="two-way-payout" class="two-way-input">
-                            <option value="50 (5 payout)">50 (5 payout)</option>
-                            <option value="50 (10 payout)" selected>50 (10 payout)</option>
-                            <option value="100 (5 payout)">100 (5 payout)</option>
-                            <option value="100 (10 payout)">100 (10 payout)</option>
+                            <option value="50 (5 payout)">50 (zerobet 5 payout)</option>
+                            <option value="50 (10 payout)" selected>50 (zerobet 10 payout)</option>
+                            <option value="100 (5 payout)">100 (zerobet 5 payout)</option>
+                            <option value="100 (10 payout)">100 (zerobet 10 payout)</option>
                             <option value="200">200</option>
                             <option value="300">300</option>
                         </select>
@@ -240,8 +240,145 @@
                     </table>
                 </section>
 
-                <section id="three-way" class="view2"></section>
-                <section id="psp" class="view2"></section>
+                <section id="three-way" class="view2">
+                    <div class="payout-control">
+                        <span class="payout-label">Max Bet:</span>
+                        <select name="payout" id="three-way-payout" class="three-way-input">
+                            <option value="50 (5 payout)">50 (5 payout)</option>
+                            <option value="50 (10 payout)">50 (10 payout)</option>
+                            <option value="100 (5 payout)">100 (5 payout)</option>
+                            <option value="100 (10 payout)" selected>100 (10 payout)</option>
+                            <option value="200">200</option>
+                            <option value="300">300</option>
+                        </select>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Real App Odds</th>
+                                <th>Sportsbook Odds</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="three-way-name1"><input value="-" class="ev-input three-way-input"></td>
+                                <td id="three-way-realodds1"><input placeholder="+100" class="ev-input three-way-input"></td>
+                                <td id="three-way-sportsbookodds1"><input value="-" class="ev-input three-way-input"></td>
+                            </tr>
+                            <tr>
+                                <td id="three-way-name2"><input value="-" class="ev-input three-way-input"></td>
+                                <td id="three-way-realodds2"><input placeholder="+100" class="ev-input three-way-input"></td>
+                                <td id="three-way-sportsbookodds2"><input value="-" class="ev-input three-way-input"></td>
+                            </tr>
+                            <tr>
+                                <td id="three-way-name3"><input value="-" class="ev-input three-way-input"></td>
+                                <td id="three-way-realodds3"><input placeholder="+100" class="ev-input three-way-input"></td>
+                                <td id="three-way-sportsbookodds3"><input value="-" class="ev-input three-way-input"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div id="three-way-warning"></div>
+                    <div id="three-way-result-header">Results:</div>
+
+                    <table id="three-way-result">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>0 Bet EV</th>
+                                <th id="three-way-maxbet-header"></th>
+                                <th>Fair Odds</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td id="three-way-result-name1"></td>
+                                <td id="three-way-name1-zero-ev"></td>
+                                <td id="three-way-name1-max-ev"></td>
+                                <td id="three-way-name1-fair"></td>
+                            </tr>
+                            <tr>
+                                <td id="three-way-result-name2"></td>
+                                <td id="three-way-name2-zero-ev"></td>
+                                <td id="three-way-name2-max-ev"></td>
+                                <td id="three-way-name2-fair"></td>
+                            </tr>
+                            <tr>
+                                <td id="three-way-result-name3"></td>
+                                <td id="three-way-name3-zero-ev"></td>
+                                <td id="three-way-name3-max-ev"></td>
+                                <td id="three-way-name3-fair"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                <section id="more" class="view2">
+                    <div class="more-calculator-control">
+                        <span class="more-calculator-label">Select Calculator:</span>
+                        <select name="more-calculator" id="more-calculator" class="more-calculator-input">
+                            <option value="psp" selected>PSP (sport)</option>
+                            <option value="psp2" selected>PSP (in game)</option>
+                            <option value="dotd">🐕‍🦺DOTD</option>
+                        </select>
+
+                        <section id="psp" class="view3 active" data-calculator="psp">
+                            <div class="psp-container">
+                                <div class="psp-input-group">
+                                    <input type="text" id="psp-player-input" placeholder="Player name" class="psp-input">
+                                    <input type="text" id="psp-odd-input" placeholder="Odd" class="psp-input psp-small-input">
+                                    <input type="text" id="psp-placement-input" placeholder="Placement" class="psp-input psp-small-input">
+                                    <button id="psp-add-btn" class="psp-btn">Add</button>
+                                </div>
+                                <div class="psp-list-header">
+                                    <span class="psp-header-name">Name</span>
+                                    <span class="psp-header-odd">Odd</span>
+                                    <span class="psp-header-placement">Placement</span>
+                                    <span class="psp-header-ev">EV</span>
+                                    <span class="psp-header-remove">Action</span>
+                                </div>
+                                <ul id="psp-player-list" class="psp-list"></ul>
+                                <button id="psp-delete-all-btn" class="psp-delete-all-btn">Delete All</button>
+                            </div>
+                        </section>
+                        <section id="psp2" class="view3" data-calculator="psp2">
+                            <div class="psp-container">
+                                <div class="psp-input-group">
+                                    <input type="text" id="psp2-player-input" placeholder="Player name" class="psp-input">
+                                    <input type="text" id="psp2-odd-input" placeholder="Odd" class="psp-input psp-small-input">
+                                    <input type="text" id="psp2-placement-input" placeholder="Placement" class="psp-input psp-small-input">
+                                    <button id="psp2-add-btn" class="psp-btn">Add</button>
+                                </div>
+                                <div class="psp-list-header">
+                                    <span class="psp-header-name">Name</span>
+                                    <span class="psp-header-odd">Odd</span>
+                                    <span class="psp-header-placement">Placement</span>
+                                    <span class="psp-header-ev">EV</span>
+                                    <span class="psp-header-remove">Action</span>
+                                </div>
+                                <ul id="psp2-player-list" class="psp-list"></ul>
+                                <button id="psp2-delete-all-btn" class="psp-delete-all-btn">Delete All</button>
+                            </div>
+                        </section>
+                        <section id="dotd" class="view3" data-calculator="dotd">
+                            <button id="dotd-calculate-btn" class="psp-btn">Calculate</button>
+                            <div id="dotd-warning"></div>
+                            <table id="dotd-table">
+                                <thead>
+                                    <tr>
+                                        <th>Team</th>
+                                        <th>Real Odds</th>
+                                        <th>People</th>
+                                        <th>FD Odds</th>
+                                        <th>EV</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dotd-table-body"></tbody>
+                            </table>
+                        </section>
+                    </div>
+                </section>
             </div>
         </section>
     </div>
