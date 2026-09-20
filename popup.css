@@ -143,7 +143,7 @@ header h1 {
     margin-bottom: 12px;
 }
 
-.bankroll-label, .payout-label {
+.bankroll-label, .payout-label, .more-calculator-label {
     font-size: 12px;
     color: var(--muted);
     display: flex;
@@ -467,11 +467,12 @@ td:first-child {
     display: block;
 }
 
-.payout-control {
+.payout-control, .more-calculator-control {
     display: flex;
     gap: 8px;
     margin-bottom: 12px;
     margin-top: 8px;
+    flex-direction: column;
 }
 
 select {
@@ -506,29 +507,29 @@ select {
     opacity: 1;
 }
 
-#two-way-warning {
+#two-way-warning, #three-way-warning {
     margin-top: 8px;
     font-size: 13px;
     color: var(--red);
 }
 
-#two-way-result-header {
+#two-way-result-header, #three-way-result-header {
     font-size: 15px;
     font-weight: 600;
     color: var(--accent);
     display: none;
 }
 
-#two-way-result-header.active {
+#two-way-result-header.active, #three-way-result-header.active {
     display: block;
 }
 
-#two-way-result {
+#two-way-result, #three-way-result {
     margin-top: 12px;
     display: none;
 }
 
-#two-way-result.active {
+#two-way-result.active, #three-way-result.active {
     display: table;
 }
 
@@ -536,6 +537,14 @@ select {
     color: var(--green);
     font-weight: 650;
     font-size: 14px;
+}
+
+.view3 {
+    display: none;
+}
+
+.view3.active {
+    display: block;
 }
 
 /* Disable transitions initially */
@@ -550,4 +559,226 @@ select {
     text-align: center;
     font-size: 11px;
     color: var(--muted);
+}
+
+/* ================== PSP Player List Styles ================== */
+.psp-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.psp-input-group {
+    display: flex;
+    gap: 8px;
+}
+
+.psp-input {
+    flex: 1;
+    background: var(--panel);
+    color: var(--text);
+    border: 3px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 13px;
+    width: 100%;
+}
+
+.psp-input.psp-small-input {
+    flex: 0 0 auto;
+    width: 90px;
+}
+
+.psp-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.psp-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.psp-btn:hover {
+    background: rgba(79, 124, 255, 0.9);
+}
+
+.psp-btn:active {
+    transform: scale(0.98);
+}
+
+.psp-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.psp-list-header {
+    display: flex;
+    gap: 6px;
+    padding: 6px 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+    align-items: center;
+}
+
+.psp-header-name {
+    flex: 1;
+    min-width: 80px;
+}
+
+.psp-header-odd {
+    width: 80px;
+    text-align: center;
+}
+
+.psp-header-placement {
+    width: 80px;
+    text-align: center;
+}
+
+.psp-header-ev {
+    width: 60px;
+    text-align: center;
+}
+
+.psp-header-remove {
+    width: 70px;
+    text-align: center;
+}
+
+.psp-list-item {
+    display: flex;
+    align-items: center;
+    background: var(--panel);
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text);
+    transition: background 0.2s, transform 0.1s;
+    gap: 6px;
+}
+
+.psp-list-item:hover {
+    background: rgba(79, 124, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.psp-list-item-name {
+    flex: 1;
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.psp-list-item-inputs {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.psp-item-input {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    width: 80px;
+}
+
+.psp-item-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+}
+
+.psp-item-ev {
+    width: 60px;
+    text-align: center;
+    font-weight: 600;
+    padding: 4px 6px;
+    border-radius: 4px;
+}
+
+.psp-item-ev.best-ev {
+    color: var(--green);
+    background: rgba(59, 214, 113, 0.1);
+}
+
+.psp-remove-btn {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    font-weight: 600;
+    width: 70px;
+}
+
+.psp-remove-btn:hover {
+    background: rgba(255, 92, 92, 0.9);
+}
+
+.psp-remove-btn:active {
+    transform: scale(0.96);
+}
+
+.psp-list::-webkit-scrollbar {
+    width: 6px;
+    height: 8px;
+}
+
+.psp-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+}
+
+.psp-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.psp-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.psp-delete-all-btn {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    width: 100%;
+    height: 24px;
+}
+
+.psp-delete-all-btn:hover {
+    background: rgba(255, 92, 92, 0.9);
+}
+
+.psp-delete-all-btn:active {
+    transform: scale(0.98);
 }
